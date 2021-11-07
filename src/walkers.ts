@@ -17,6 +17,8 @@ export function parsePattern(context: Context, terminator?: string){
             return generated;
         }else if(char === '%'){
             generated+=parseTemplate(context, terminator);
+        }else if(char === '\\'){
+            generated+=parseEscape(context);
         }else{
             generated += char;
         }
@@ -141,6 +143,11 @@ export function parseTag(context: Context){
         }
         context.next();
     }
+}
+
+export function parseEscape(context: Context){
+    context.next();
+    return context.get();
 }
 
 export interface FunctionMap {

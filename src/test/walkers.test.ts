@@ -54,6 +54,9 @@ describe('parseTemplate test', ()=>{
         expect(()=>parsePattern(new Context('%[a^:123]'))).throw(/jz103/);
         expect(()=>parsePattern(new Context('%[a%:123]'))).throw(/jz103/);
     });
+    it('escape',()=>{
+        expect(generate('\\%c')).equal('%c');
+    });
 });
 describe('eval', ()=>{
     it('eval', ()=>{
