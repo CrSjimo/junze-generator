@@ -22,7 +22,7 @@ functionRegistry.set('d', (context)=>{
 
 functionRegistry.set('e', (context)=>{
     if(!context.date)context.date = new Date('2021/04/28');
-    return Math.floor((Number(context.date) - Date.now())/(1000*86400));
+    return -Math.floor((Date.now() - Number(context.date))/(1000*86400));
 });
 
 functionRegistry.set('j', (context, args)=>{
