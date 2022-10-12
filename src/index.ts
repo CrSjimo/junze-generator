@@ -1,10 +1,10 @@
-import { Context } from './Context';
+import { Context, VariableMap } from './Context';
 import './builtinFunctions';
 import { corpusRegistry } from './registries';
 import { parseEval, parsePattern } from './walkers';
 
-export function generate(pattern: string, date?: Date, enableEval?: boolean){
-    let context = new Context(pattern, date);
+export function generate(pattern: string, date?: Date, enableEval?: boolean, env?: VariableMap){
+    let context = new Context(pattern, date, env);
     if(enableEval){
         return parseEval(context);
     }else{
