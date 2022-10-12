@@ -59,6 +59,10 @@ functionRegistry.set('E', (context, args)=>{
     return candidates[random.int(0, candidates.length - 1)];
 });
 
+functionRegistry.set('i', (context, args)=>{
+    return (args[0] as any) == false ? args[2] : args[1]
+})
+
 functionRegistry.set('j', (context, args)=>{
     return juejuezi(args[0], args[1]);
 });

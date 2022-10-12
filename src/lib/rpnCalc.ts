@@ -7,6 +7,7 @@ function calc(a :number, b: number, op: string){
         case '//': return Math.floor(a/b);
         case '^': return Math.pow(a,b);
         case '_': return a.toFixed(b);
+        case 'mod': return a % b;
         default: throw new SyntaxError(`Invalid Operand: ${op}`);
     }
 }
