@@ -86,7 +86,7 @@ export function parseList(context: Context){
         if(char === undefined){
             throwUnexpectedEndOfInput(context,['}']);
         }else if(char === '}'){
-            return items[random.int(0, items.length-1)];
+            return JSON.stringify(items);
         }else if(char === '{' || char === ','){
             context.next();
             items.push(parsePattern(context,',}'));

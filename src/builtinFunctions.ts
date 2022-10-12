@@ -3,6 +3,16 @@ import { default as random } from "random";
 import { default as juejuezi } from './lib/juejuezi';
 import { default as rpnCalc } from './lib/rpnCalc';
 
+functionRegistry.set('a', (context, args)=>{
+    let array = JSON.parse(args[0]);
+    if(!(array instanceof Array)){
+        throw new SyntaxError('Invalid array syntax.');
+    }
+    let index = parseInt(args[1]);
+    index = isNaN(index) ? random.int(0, array.length-1) : index;
+    return array[index];
+});
+
 functionRegistry.set('c', ()=>{
     return String.fromCharCode(random.int(0x4e00,0x9fff));
 });
