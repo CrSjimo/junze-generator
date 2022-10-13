@@ -2,15 +2,49 @@ import { corpusRegistry, functionRegistry } from "./registries";
 import { default as random } from "random";
 import { default as juejuezi } from './lib/juejuezi';
 import { default as rpnCalc } from './lib/rpnCalc';
+import listFormat from "./lib/listFormat";
+import listParse from "./lib/checkIsList";
+import valueToBool from "./lib/toBool";
+import boolToValue from "./lib/boolToValue";
+import logicCalc from "./lib/logicCalc";
 
 functionRegistry.set('a', (context, args)=>{
-    let array = JSON.parse(args[0]);
-    if(!(array instanceof Array)){
-        throw new SyntaxError('Invalid array syntax.');
-    }
+    let array = listParse(args[0]);
     let index = parseInt(args[1]);
     index = isNaN(index) ? random.int(0, array.length-1) : index;
     return array[index];
+});
+
+functionRegistry.set('A', (context, args)=>{
+    let array = listParse(args[0]);
+    switch(args[1]){
+        case 'concat':
+            return listFormat(array.concat(...listParse(args[2])));
+        case 'slice':
+            let [l, r] = args.slice(2).map(parseInt).map(a=>isNaN(a)?undefined:a);
+            return listFormat(array.slice(l,r));
+        case 'indexOf':{
+            let index: number|undefined = parseInt(args[3]);
+            index = isNaN(index)?undefined:index;
+            return array.indexOf(args[2], index);
+        }
+        case 'lastIndexOf':{
+            let item = args[2];
+            let index: number|undefined = parseInt(args[3]);
+            index = isNaN(index)?undefined:index;
+            return array.indexOf(item, index);
+        }
+        case 'length':
+            return array.length;
+        case 'includes':{
+            let item = args[2];
+            let index: number|undefined = parseInt(args[3]);
+            index = isNaN(index)?undefined:index;
+            return boolToValue(array.includes(item, index));
+        }
+        default:
+            throw new SyntaxError('Invalid operation.');
+    }
 });
 
 functionRegistry.set('c', ()=>{
@@ -60,11 +94,15 @@ functionRegistry.set('E', (context, args)=>{
 });
 
 functionRegistry.set('i', (context, args)=>{
-    return (args[0] as any) == false ? args[2] : args[1]
+    return valueToBool(args[0]) ? args[1] : args[2]
 })
 
 functionRegistry.set('j', (context, args)=>{
     return juejuezi(args[0], args[1]);
+});
+
+functionRegistry.set('L', (context, args)=>{
+    return logicCalc(args[0], args[1], args[2]);
 });
 
 functionRegistry.set('n',(context,args)=>{
