@@ -1,9 +1,11 @@
 import random, { Random } from "random";
 import { Context } from "./Context";
 import { throwInvalidTagName, throwNotDefinedError, throwRuntimeError, throwUnexpectedEndOfInput, throwUnexpectedToken } from "./errors";
+import functionNameRegExp from "./lib/functionNameRegExp";
+import listStringify from "./lib/listStringify";
 import { FunctionRegistry, functionRegistry } from "./registries";
 
-export function parsePattern(context: Context, terminator?: string){
+export function parsePattern(context: Context, terminator?: string, doNotExecute?: boolean){
     let generated = '';
     for(;;){
         let char = context.get();
@@ -16,7 +18,7 @@ export function parsePattern(context: Context, terminator?: string){
         }else if(terminator?.includes(char)){
             return generated;
         }else if(char === '%'){
-            generated+=parseTemplate(context, terminator);
+            generated+=parseTemplate(context, terminator, doNotExecute);
         }else if(char === '\\'){
             generated+=parseEscape(context);
         }else{
@@ -26,7 +28,7 @@ export function parsePattern(context: Context, terminator?: string){
     }
 }
 
-export function parseTemplate(context: Context, terminator?: string){
+export function parseTemplate(context: Context, terminator?: string, doNotExecute?: boolean){
     context.next();
     let char = context.get();
     if(char === undefined){
@@ -34,37 +36,37 @@ export function parseTemplate(context: Context, terminator?: string){
     }else if(terminator?.includes(char)){
         throwUnexpectedToken(context, '%');
     }else if(char === '{'){
-        return parseList(context);
+        return parseList(context, doNotExecute);
     }else if(char === '['){
-        return parseTag(context);
-    }else if(/[A-Za-z]/.test(char)){
-        return parseFunction(context);
+        return parseTag(context, doNotExecute);
+    }else if(functionNameRegExp.test(char)){
+        return parseFunction(context, doNotExecute);
     }else{
         throwUnexpectedToken(context, char);
     }
 
 }
 
-export function parseFunction(context: Context){
+export function parseFunction(context: Context, doNotExecute?: boolean){
     let funcName = context.get();
     let func = functionRegistry.get(funcName);
-    if(!func){
+    if(!doNotExecute && !func){
         throwNotDefinedError(context, funcName);
     }
     let args: string[] = [];
     if(context.get(1) === '('){
         context.next();
-        args = parseArgs(context);
+        args = parseArgs(context, doNotExecute);
     }
     try{
-        return func(context,args);
+        return doNotExecute ? '':(func as any)(context,args);
     }catch(e){
         throwRuntimeError(context, e);
     }
     
 }
 
-export function parseArgs(context: Context){
+export function parseArgs(context: Context, doNotExecute?: boolean){
     let args: string[] = [];
     for(;;){
         let char = context.get();
@@ -74,78 +76,103 @@ export function parseArgs(context: Context){
             return args;
         }else if(char === '(' || char === ','){
             context.next();
-            args.push(parsePattern(context,',)'));
+            args.push(parsePattern(context, ',)', doNotExecute));
         }
     }
 }
 
-export function parseList(context: Context){
+export function parseList(context: Context, doNotExecute?: boolean){
     let items: string[] = [];
     for(;;){
         let char = context.get();
         if(char === undefined){
             throwUnexpectedEndOfInput(context,['}']);
         }else if(char === '}'){
-            return JSON.stringify(items);
+            return listStringify(items);
         }else if(char === '{' || char === ','){
             context.next();
-            items.push(parsePattern(context,',}'));
+            items.push(parsePattern(context,',}', doNotExecute));
         }
     }
 }
 
-export function parseTag(context: Context){
+export function parseTag(context: Context, doNotExecute?: boolean){
     let tagName = '';
     let isTemplateMode = false;
+    let isReference = false;
+    let isParsingTagName = true;
+    let doNotReturn = false;
     context.next();
+    if(context.get() === '&'){
+        isReference = true;
+        context.next();
+    }else if(context.get() === '@'){
+        isReference = true;
+        doNotReturn = true;
+        context.next();
+    }
     if(context.get() === '%'){
         isTemplateMode = true;
         context.next();
     }
-    for(;;){
+    for(;;context.next()){
         let char = context.get();
         if(char === undefined){
             throwUnexpectedEndOfInput(context, [']']);
         }else if(char === ':'){
+            isParsingTagName = false;
             context.next();
             let startPos = context.index;
-            let result = parsePattern(context, ']');
+            let result = parsePattern(context, ']', doNotExecute || (isTemplateMode && isReference));
             let endPos = context.index;
-            if(isTemplateMode){
-                context.variables.set(tagName, {
-                    value: context.pattern.slice(startPos, endPos),
-                    isTemplateMode,
-                });
-            }else{
-                context.variables.set(tagName, {
-                    value: result,
-                    isTemplateMode,
-                });
-            }
-            return result;
-        }else if(char === ']'){
-            let variableStorage = context.variables.get(tagName);
-            if(variableStorage){
-                if(variableStorage.isTemplateMode){
-                    return parsePattern(new Context(context, variableStorage.value));
+            if(!doNotExecute){
+                if(isTemplateMode){
+                    context.variables.set(tagName, {
+                        value: context.pattern.slice(startPos, endPos),
+                        isTemplateMode,
+                    });
                 }else{
-                    return variableStorage.value;
+                    context.variables.set(tagName, {
+                        value: result,
+                        isTemplateMode,
+                    });
+                }
+            }
+            if(isReference){
+                return doNotReturn ? '' : tagName;
+            }else{
+                return result;
+            }
+        }else if(char === ']'){
+            isParsingTagName = false;
+            if(!doNotExecute){
+                let variableStorage = context.variables.get(tagName);
+                if(variableStorage){
+                    if(isReference){
+                        return tagName;
+                    }
+                    if(variableStorage.isTemplateMode){
+                        return parsePattern(new Context(context, variableStorage.value));
+                    }else{
+                        return variableStorage.value;
+                    }
+                }else{
+                    throwNotDefinedError(context, tagName);
                 }
             }else{
-                throwNotDefinedError(context, tagName);
+                return '';
             }
-        }else{
+        }else if(isParsingTagName){
             if(/[$\-0-9A-Z_a-z]/.test(char)){
                 tagName += char;
             }else{
                 throwInvalidTagName(context, char);
             }
         }
-        context.next();
     }
 }
 
-export function parseEscape(context: Context){
+export function parseEscape(context: Context, doNotExecute?: boolean){
     context.next();
     return context.get();
 }
