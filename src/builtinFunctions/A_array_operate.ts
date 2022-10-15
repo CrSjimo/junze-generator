@@ -13,7 +13,7 @@ const arrayOperations: ArrayOperations = {
         return listFormat(array.concat(...listParse(args[2])));
     },
     slice(array, args){
-        let [l, r] = args.slice(2).map(parseInt).map(a=>isNaN(a)?undefined:a);
+        let [l, r] = [parseInt(args[2]),parseInt(args[3])].map(a=>isNaN(a)?undefined:a);
         return listFormat(array.slice(l,r));
     },
     indexOf(array, args){
@@ -62,7 +62,14 @@ const arrayOperations: ArrayOperations = {
 
 functionRegistry.set('A', (context, args)=>{
     let array = listParse(args[0]);
-    if(args[1] in arrayOperations){
+    let index = 0;
+    if(!isNaN(index = parseInt(args[1]))){
+        if(typeof array == 'string'){
+            throw new TypeError('The access operation requires list.');
+        }else{
+            return listFormat(array[index] = args[2]);
+        }
+    }else if(args[1] in arrayOperations){
         return arrayOperations[args[1]](array, args, context);
     }else{
         throw new SyntaxError('Invalid operation.');
