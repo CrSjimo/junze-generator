@@ -7,6 +7,7 @@ import "./d_date";
 import "./e_date";
 import "./E_emoji";
 import "./f_foreach";
+import "./I_invoke";
 import "./i_if";
 import "./j_juejuezi";
 import "./L_logic_calculate";
