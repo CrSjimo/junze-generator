@@ -127,15 +127,17 @@ export function parseTag(context: Context, doNotExecute?: boolean){
             let endPos = context.index;
             if(!doNotExecute){
                 if(isTemplateMode){
-                    context.variables.set(tagName, {
-                        value: context.pattern.slice(startPos, endPos),
+                    tagName = context.setVariable(
+                        tagName, 
+                        context.pattern.slice(startPos, endPos),
                         isTemplateMode,
-                    });
+                    );
                 }else{
-                    context.variables.set(tagName, {
-                        value: result,
-                        isTemplateMode,
-                    });
+                    tagName = context.setVariable(
+                        tagName, 
+                        result,
+                        isTemplateMode
+                    );
                 }
             }
             if(isReference){
@@ -146,19 +148,12 @@ export function parseTag(context: Context, doNotExecute?: boolean){
         }else if(char === ']'){
             isParsingTagName = false;
             if(!doNotExecute){
-                let variableStorage = context.variables.get(tagName);
-                if(variableStorage){
-                    if(isReference){
-                        return tagName;
-                    }
-                    if(variableStorage.isTemplateMode){
-                        return parsePattern(new Context(context, variableStorage.value));
-                    }else{
-                        return variableStorage.value;
-                    }
+                if(isReference){
+                    return doNotReturn ? '' : tagName;
                 }else{
-                    throwNotDefinedError(context, tagName);
+                    return context.getValueOfVariable(tagName);
                 }
+                
             }else{
                 return '';
             }

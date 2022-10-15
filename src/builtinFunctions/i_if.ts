@@ -1,17 +1,12 @@
-import { Context } from "../Context";
 import valueToBool from "../lib/toBool";
 import { functionRegistry } from "../registries";
-import { parsePattern } from "../walkers";
 
 functionRegistry.set('i', (context, args)=>{
-    let conditionTemplate = context.variables.get(args[0]);
-    let trueVariableStorage = context.variables.get(args[1]);
-    let falseVariableStorage = context.variables.get(args[2]);
-    if(conditionTemplate && valueToBool(
-        parsePattern(new Context(context, conditionTemplate.value))
+    if(valueToBool(
+        context.getValueOfVariable(args[0])
     )){
-        return trueVariableStorage ? parsePattern(new Context(context, trueVariableStorage.value)) : '';
+        return context.getValueOfVariable(args[1]);
     }else{
-        return falseVariableStorage ? parsePattern(new Context(context, falseVariableStorage.value)) : '';
+        return context.getValueOfVariable(args[2]);
     }
 });
