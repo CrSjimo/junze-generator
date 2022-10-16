@@ -1,5 +1,5 @@
 import boolToValue from "./boolToValue";
-import valueToBool from "./toBool";
+import valueToBool from "./valueToBool";
 
 function _logicCalc(operand1: string, operator: string, operand2: string){
     switch(operator){

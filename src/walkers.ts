@@ -102,6 +102,7 @@ export function parseTag(context: Context, doNotExecute?: boolean){
     let isReference = false;
     let isParsingTagName = true;
     let doNotReturn = false;
+    let isInvoke = false;
     context.next();
     if(context.get() === '&'){
         isReference = true;
@@ -109,6 +110,10 @@ export function parseTag(context: Context, doNotExecute?: boolean){
     }else if(context.get() === '@'){
         isReference = true;
         doNotReturn = true;
+        context.next();
+    }
+    if(context.get() === '*'){
+        isInvoke = true;
         context.next();
     }
     if(context.get() === '%'){
@@ -126,6 +131,9 @@ export function parseTag(context: Context, doNotExecute?: boolean){
             let result = parsePattern(context, ']', doNotExecute || (isTemplateMode && isReference));
             let endPos = context.index;
             if(!doNotExecute){
+                if(isInvoke){
+                    tagName = context.getValueOfVariable(tagName);
+                }
                 if(isTemplateMode){
                     tagName = context.setVariable(
                         tagName, 
@@ -150,6 +158,8 @@ export function parseTag(context: Context, doNotExecute?: boolean){
             if(!doNotExecute){
                 if(isReference){
                     return doNotReturn ? '' : tagName;
+                }else if(isInvoke){
+                    return context.getValueOfVariable(context.getValueOfVariable(tagName));
                 }else{
                     return context.getValueOfVariable(tagName);
                 }

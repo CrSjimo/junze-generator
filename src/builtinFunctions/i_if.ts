@@ -1,4 +1,4 @@
-import valueToBool from "../lib/toBool";
+import valueToBool from "../lib/valueToBool";
 import { functionRegistry } from "../registries";
 
 functionRegistry.set('i', (context, args)=>{

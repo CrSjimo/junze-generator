@@ -33,6 +33,7 @@ export class Context {
             let [context, pattern] = args;
             this.date = context.date;
             this._variables = context._variables;
+            this._anonymousVariableCounter = context._anonymousVariableCounter;
             this.pattern = pattern;
         }
     }
