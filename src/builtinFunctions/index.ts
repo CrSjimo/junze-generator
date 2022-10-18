@@ -1,4 +1,3 @@
-import "./#_hashtag";
 import "./a_array";
 import "./A_array_operate";
 import "./C_calculate";
@@ -7,6 +6,7 @@ import "./d_date";
 import "./e_date";
 import "./E_emoji";
 import "./f_foreach";
+import "./h_echo";
 import "./I_invoke";
 import "./i_if";
 import "./j_juejuezi";

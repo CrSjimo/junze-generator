@@ -1,8 +1,8 @@
 import random, { Random } from "random";
 import { Context } from "./Context";
 import { throwInvalidTagName, throwNotDefinedError, throwRuntimeError, throwUnexpectedEndOfInput, throwUnexpectedToken } from "./errors";
-import functionNameRegExp from "./lib/functionNameRegExp";
 import listStringify from "./lib/listStringify";
+import { FUNCTION_NAME_REGEXP, VARIABLE_NAME_REGEXP } from "./regexp";
 import { FunctionRegistry, functionRegistry } from "./registries";
 
 export function parsePattern(context: Context, terminator?: string, doNotExecute?: boolean){
@@ -31,20 +31,27 @@ export function parsePattern(context: Context, terminator?: string, doNotExecute
 export function parseTemplate(context: Context, terminator?: string, doNotExecute?: boolean){
     context.next();
     let char = context.get();
+    let muted = false;
+    let returnValue = '';
+    if(char == '@'){
+        muted = true;
+        context.next();
+        char = context.get();
+    }
     if(char === undefined){
         throwUnexpectedEndOfInput(context, ['function', 'list', 'tag']);
     }else if(terminator?.includes(char)){
         throwUnexpectedToken(context, '%');
     }else if(char === '{'){
-        return parseList(context, doNotExecute);
+        returnValue = parseList(context, doNotExecute);
     }else if(char === '['){
-        return parseTag(context, doNotExecute);
-    }else if(functionNameRegExp.test(char)){
-        return parseFunction(context, doNotExecute);
+        returnValue = parseTag(context, doNotExecute);
+    }else if(FUNCTION_NAME_REGEXP.test(char)){
+        returnValue = parseFunction(context, doNotExecute);
     }else{
         throwUnexpectedToken(context, char);
     }
-
+    return muted ? '' : returnValue;
 }
 
 export function parseFunction(context: Context, doNotExecute?: boolean){
@@ -168,7 +175,7 @@ export function parseTag(context: Context, doNotExecute?: boolean){
                 return '';
             }
         }else if(isParsingTagName){
-            if(/[$\-0-9A-Z_a-z]/.test(char)){
+            if(VARIABLE_NAME_REGEXP.test(char)){
                 tagName += char;
             }else{
                 throwInvalidTagName(context, char);

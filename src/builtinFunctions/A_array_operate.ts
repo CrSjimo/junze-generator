@@ -4,11 +4,23 @@ import listFormat from "../lib/listFormat";
 import listParse from "../lib/listParse";
 import { functionRegistry } from "../registries";
 
-interface ArrayOperations{
-    [operation: string]: (array: string|any[], args: string[], context: Context)=>string;
+interface ArrayOperationType{
+    (array: string|any[], args: string[], context: Context): string;
 }
 
-const arrayOperations: ArrayOperations = {
+interface ArrayOperationsType extends Record<string, ArrayOperationType>{}
+
+const ArrayOperations: ArrayOperationsType = {
+    set(array, args){
+        let [index, value] = args;
+        let i = parseInt(index);
+        if(typeof array == 'string'){
+            array = array.slice(0, i) + value + array.slice(i+1);
+        }else{
+            array[i] = value;
+        }
+        return listFormat(array);
+    },
     concat(array, args){
         return listFormat(array.concat(...listParse(args[2])));
     },
@@ -69,8 +81,8 @@ functionRegistry.set('A', (context, args)=>{
         }else{
             return listFormat(array[index] = args[2]);
         }
-    }else if(args[1] in arrayOperations){
-        return arrayOperations[args[1]](array, args, context);
+    }else if(args[1] in ArrayOperations){
+        return ArrayOperations[args[1]](array, args, context);
     }else{
         throw new SyntaxError('Invalid operation.');
     }
