@@ -14,8 +14,8 @@ const Calculations: CalculationsType = {
     '/': (a,b)=>a/b,
     '//': (a,b)=>Math.floor(a/b),
     '^': (a,b)=>Math.pow(a,b),
-    '_': (a,b)=>a.toFixed(b),
-    'mod': (a,b)=>a % b,
+    '-floor': (a,b)=>a.toFixed(b),
+    '-mod': (a,b)=>a % b,
 }
 
 function calculationAssign(context: Context, a: string, b: number, op: string){
@@ -32,10 +32,6 @@ export default function rpnCalc(context: Context, args: (number|string)[]){
     let s: (string|number)[] = [];
     let lastPushed: string|number = 0;
     for(let t of args){
-        if(typeof t === 'string' && /0-9/.test(t[0])){
-            // handle the result of '_' operation
-            t = parseFloat(t);
-        }
         if(typeof t === 'number' || VARIABLE_NAME_REGEXP.test(t)){
             s.push(t);
             lastPushed = t;
@@ -63,10 +59,15 @@ export default function rpnCalc(context: Context, args: (number|string)[]){
                 lastPushed = calculationAssign(context, op1, op2, t);
             }
             
-            s.push(parseFloat(lastPushed as any));
+            if(VARIABLE_NAME_REGEXP.test(lastPushed.toString())){
+                s.push(lastPushed);
+            }else{
+                s.push(parseFloat(lastPushed as any));
+            }
         }
     }
     if(s.length !== 1){
+        console.log(s);
         throw new Error('RPN Expression Overflowed');
     }
     return lastPushed.toString();
